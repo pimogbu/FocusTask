@@ -8,7 +8,9 @@ import android.widget.Button
 import android.widget.CheckBox
 import android.widget.EditText
 import android.widget.LinearLayout
+import android.widget.ImageButton 
 import androidx.activity.enableEdgeToEdge
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
@@ -33,12 +35,19 @@ class MainActivity : AppCompatActivity() {
         }
 
         val buttonAdd = findViewById<Button>(R.id.buttonAdd)
+
+        val imageButtonDeleteAllChecked = findViewById<ImageButton>(R.id.imageButtonDeleteAllChecked)
+
         taskContainer = findViewById(R.id.taskContainer)
 
         loadTasks()
 
         buttonAdd.setOnClickListener {
             addNewTask("", false)
+        }
+
+        imageButtonDeleteAllChecked.setOnClickListener {
+            showDeleteConfirmationDialog()
         }
     }
 
@@ -60,9 +69,48 @@ class MainActivity : AppCompatActivity() {
 
         checkBox.setOnCheckedChangeListener { _, checked ->
             updateTextStyle(editText, checked, defaultColor)
+            saveTasks()
         }
 
         taskContainer.addView(taskView)
+    }
+
+    private fun showDeleteConfirmationDialog() {
+        val checkedTaskCount = (0 until taskContainer.childCount).count { i ->
+            val taskView = taskContainer.getChildAt(i)
+            taskView.findViewById<CheckBox>(R.id.checkBox).isChecked
+        }
+
+        if (checkedTaskCount == 0) {
+            AlertDialog.Builder(this)
+                .setTitle("Warning")
+                .setMessage("There is no checked task.")
+                .setPositiveButton("Okay", null)
+                .show()
+            return
+        }
+
+
+        AlertDialog.Builder(this)
+            .setTitle("Delete Tasks")
+            .setMessage("Checked ($checkedTaskCount) task will delete. Are you sure?")
+            .setPositiveButton("Yes") { dialog, which ->
+                deleteCheckedTasks()
+            }
+            .setNegativeButton("No", null)
+            .show()
+    }
+
+    private fun deleteCheckedTasks() {
+        for (i in taskContainer.childCount - 1 downTo 0) {
+            val taskView = taskContainer.getChildAt(i)
+            val checkBox = taskView.findViewById<CheckBox>(R.id.checkBox)
+
+            if (checkBox.isChecked) {
+                taskContainer.removeViewAt(i)
+            }
+        }
+        saveTasks()
     }
 
     private fun saveTasks() {
@@ -110,5 +158,5 @@ class MainActivity : AppCompatActivity() {
             editText.setTextColor(defaultColor)
         }
     }
-    
+
 }

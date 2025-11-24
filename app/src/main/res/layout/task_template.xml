@@ -20,7 +20,7 @@
         android:layout_height="wrap_content"
         android:layout_marginStart="8dp"
         android:background="@null"
-        android:hint="Yeni Görev"
+        android:hint="New Task"
         android:inputType="textMultiLine"
         android:maxLines="5"
         android:textSize="18sp" />

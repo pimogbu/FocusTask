@@ -4,30 +4,22 @@ import android.content.Context
 import android.graphics.Color
 import android.graphics.Paint
 import android.os.Bundle
+import android.widget.Button
 import android.widget.CheckBox
 import android.widget.EditText
+import android.widget.LinearLayout
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
-import androidx.datastore.preferences.core.booleanPreferencesKey
-import androidx.datastore.preferences.core.edit
-import androidx.datastore.preferences.core.stringPreferencesKey
-import androidx.datastore.preferences.preferencesDataStore
-import androidx.lifecycle.lifecycleScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-val Context.dataStore by preferencesDataStore(name = "todo_settings")
+import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
+
+data class TaskData(val text: String, val isChecked: Boolean)
 
 class MainActivity : AppCompatActivity() {
-    private lateinit var checkBox: CheckBox
-    private lateinit var editText: EditText
 
-    private val TASK_TEXT_KEY = stringPreferencesKey("task_text")
-    private val IS_CHECKED_KEY = booleanPreferencesKey("is_checked")
+    private lateinit var taskContainer: LinearLayout
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -40,41 +32,74 @@ class MainActivity : AppCompatActivity() {
             insets
         }
 
-        checkBox = findViewById(R.id.checkBox)
-        editText = findViewById(R.id.editTextTask)
-        val defaultColor = editText.currentTextColor
+        val buttonAdd = findViewById<Button>(R.id.buttonAdd)
+        taskContainer = findViewById(R.id.taskContainer)
 
-        lifecycleScope.launch {
-            val preferences = dataStore.data.first()
+        loadTasks()
 
-            val savedText = preferences[TASK_TEXT_KEY] ?: ""
-            val savedChecked = preferences[IS_CHECKED_KEY] ?: false
-
-            editText.setText(savedText)
-            checkBox.isChecked = savedChecked
-
-            updateTextStyle(savedChecked, defaultColor)
-        }
-
-        checkBox.setOnCheckedChangeListener { _, isChecked ->
-            updateTextStyle(isChecked, defaultColor)
+        buttonAdd.setOnClickListener {
+            addNewTask("", false)
         }
     }
 
     override fun onStop() {
         super.onStop()
-        lifecycleScope.launch(Dispatchers.IO) {
-            val currentText = editText.text.toString()
-            val currentChecked = checkBox.isChecked
+        saveTasks()
+    }
 
-            dataStore.edit { settings ->
-                settings[TASK_TEXT_KEY] = currentText
-                settings[IS_CHECKED_KEY] = currentChecked
+    private fun addNewTask(text: String, isChecked: Boolean) {
+        val taskView = layoutInflater.inflate(R.layout.task_template, null)
+
+        val checkBox = taskView.findViewById<CheckBox>(R.id.checkBox)
+        val editText = taskView.findViewById<EditText>(R.id.editTextTask)
+        val defaultColor = editText.currentTextColor
+
+        editText.setText(text)
+        checkBox.isChecked = isChecked
+        updateTextStyle(editText, isChecked, defaultColor)
+
+        checkBox.setOnCheckedChangeListener { _, checked ->
+            updateTextStyle(editText, checked, defaultColor)
+        }
+
+        taskContainer.addView(taskView)
+    }
+
+    private fun saveTasks() {
+        val taskList = ArrayList<TaskData>()
+
+        for (i in 0 until taskContainer.childCount) {
+            val taskView = taskContainer.getChildAt(i)
+
+            val editText = taskView.findViewById<EditText>(R.id.editTextTask)
+            val checkBox = taskView.findViewById<CheckBox>(R.id.checkBox)
+
+            taskList.add(TaskData(editText.text.toString(), checkBox.isChecked))
+        }
+
+        val gson = Gson()
+        val jsonString = gson.toJson(taskList)
+
+        val sharedPref = getSharedPreferences("TodoApp", Context.MODE_PRIVATE)
+        sharedPref.edit().putString("tasks_json", jsonString).apply()
+    }
+
+    private fun loadTasks() {
+        val sharedPref = getSharedPreferences("TodoApp", Context.MODE_PRIVATE)
+        val jsonString = sharedPref.getString("tasks_json", null)
+
+        if (jsonString != null) {
+            val gson = Gson()
+            val type = object : TypeToken<ArrayList<TaskData>>() {}.type
+            val savedList: ArrayList<TaskData> = gson.fromJson(jsonString, type)
+
+            for (task in savedList) {
+                addNewTask(task.text, task.isChecked)
             }
         }
     }
 
-    private fun updateTextStyle(isChecked: Boolean, defaultColor: Int) {
+    private fun updateTextStyle(editText: EditText, isChecked: Boolean, defaultColor: Int) {
         if (isChecked) {
             editText.paintFlags = editText.paintFlags or Paint.STRIKE_THRU_TEXT_FLAG
             editText.alpha = 0.5f
@@ -85,4 +110,5 @@ class MainActivity : AppCompatActivity() {
             editText.setTextColor(defaultColor)
         }
     }
+    
 }

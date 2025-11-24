@@ -23,13 +23,14 @@
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:layout_marginTop="20dp"
-        android:paddingHorizontal="20dp"
+        android:paddingStart="10dp"
+        android:paddingEnd="20dp"
         android:gravity="center_vertical"
         app:layout_constraintTop_toBottomOf="@+id/textLabel">
 
         <CheckBox
             android:id="@+id/checkBox"
-            android:layout_width="wrap_content"
+            android:layout_width="36dp"
             android:layout_height="wrap_content" />
 
         <EditText
@@ -44,7 +45,7 @@
             android:singleLine="false"
             android:maxLines="5"
             android:textSize="18sp" />
-        
+
     </LinearLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

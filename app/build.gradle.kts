@@ -10,12 +10,11 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.example.focustask"
+        applicationId = "com.pimogbu.focustask"
         minSdk = 24
         targetSdk = 36
         versionCode = 1
         versionName = "1.0"
-
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 

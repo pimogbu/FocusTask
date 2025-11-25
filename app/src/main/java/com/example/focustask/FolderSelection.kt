@@ -42,13 +42,29 @@ class FolderSelectionActivity : AppCompatActivity() {
             .setPositiveButton("Create") { _, _ ->
                 val folderName = input.text.toString().trim()
                 if (folderName.isNotEmpty() && !folderList.contains(folderName)) {
+
                     addFolderView(folderName)
                     folderList.add(folderName)
                     saveFolders()
+
+                    createDefaultTaskForFolder(folderName)
                 }
             }
             .setNegativeButton("Cancel", null)
             .show()
+    }
+    private fun createDefaultTaskForFolder(folderName: String) {
+        val defaultTask = TaskData("", false)
+        val initialList = arrayListOf(defaultTask)
+
+        val gson = Gson()
+        val jsonString = gson.toJson(initialList)
+
+        val prefName = "Tasks_$folderName"
+        getSharedPreferences(prefName, Context.MODE_PRIVATE)
+            .edit()
+            .putString("tasks_json", jsonString)
+            .apply()
     }
 
     private fun addFolderView(name: String) {
@@ -72,6 +88,7 @@ class FolderSelectionActivity : AppCompatActivity() {
                     folderContainer.removeView(folderView)
                     folderList.remove(name)
                     saveFolders()
+
                     getSharedPreferences("Tasks_$name", Context.MODE_PRIVATE).edit().clear().apply()
                 }
                 .setNegativeButton("No", null)

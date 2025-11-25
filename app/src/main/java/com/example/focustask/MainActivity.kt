@@ -8,7 +8,8 @@ import android.widget.Button
 import android.widget.CheckBox
 import android.widget.EditText
 import android.widget.LinearLayout
-import android.widget.ImageButton 
+import android.widget.ImageButton
+import android.widget.TextView
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
@@ -22,6 +23,7 @@ data class TaskData(val text: String, val isChecked: Boolean)
 class MainActivity : AppCompatActivity() {
 
     private lateinit var taskContainer: LinearLayout
+    private lateinit var currentFolderName: String
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -34,10 +36,13 @@ class MainActivity : AppCompatActivity() {
             insets
         }
 
+        currentFolderName = intent.getStringExtra("FOLDER_NAME") ?: "My Tasks"
+
+        val textLabel = findViewById<TextView>(R.id.textLabel)
+        textLabel.text = currentFolderName
+
         val buttonAdd = findViewById<Button>(R.id.buttonAdd)
-
         val imageButtonDeleteAllChecked = findViewById<ImageButton>(R.id.imageButtonDeleteAllChecked)
-
         taskContainer = findViewById(R.id.taskContainer)
 
         loadTasks()
@@ -72,6 +77,10 @@ class MainActivity : AppCompatActivity() {
             saveTasks()
         }
 
+        editText.setOnFocusChangeListener { _, hasFocus ->
+            if (!hasFocus) saveTasks()
+        }
+
         taskContainer.addView(taskView)
     }
 
@@ -90,11 +99,10 @@ class MainActivity : AppCompatActivity() {
             return
         }
 
-
         AlertDialog.Builder(this)
             .setTitle("Delete Tasks")
-            .setMessage("Checked ($checkedTaskCount) task will delete. Are you sure?")
-            .setPositiveButton("Yes") { dialog, which ->
+            .setMessage("Checked ($checkedTaskCount) task(s) will be deleted. Are you sure?")
+            .setPositiveButton("Yes") { _, _ ->
                 deleteCheckedTasks()
             }
             .setNegativeButton("No", null)
@@ -128,12 +136,14 @@ class MainActivity : AppCompatActivity() {
         val gson = Gson()
         val jsonString = gson.toJson(taskList)
 
-        val sharedPref = getSharedPreferences("TodoApp", Context.MODE_PRIVATE)
+        val prefName = "Tasks_$currentFolderName"
+        val sharedPref = getSharedPreferences(prefName, Context.MODE_PRIVATE)
         sharedPref.edit().putString("tasks_json", jsonString).apply()
     }
 
     private fun loadTasks() {
-        val sharedPref = getSharedPreferences("TodoApp", Context.MODE_PRIVATE)
+        val prefName = "Tasks_$currentFolderName"
+        val sharedPref = getSharedPreferences(prefName, Context.MODE_PRIVATE)
         val jsonString = sharedPref.getString("tasks_json", null)
 
         if (jsonString != null) {
@@ -158,5 +168,4 @@ class MainActivity : AppCompatActivity() {
             editText.setTextColor(defaultColor)
         }
     }
-
 }
